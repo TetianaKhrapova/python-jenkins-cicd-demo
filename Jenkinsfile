@@ -15,18 +15,21 @@ pipeline {
         stage('Lint') {
             steps {
                 sh script: """#!/bin/bash
-                python3 -m venv pyenv
-                source pyenv/bin/activate
-                pip install flake8
-                flake8 app.py
+                   python3 -m venv pyenv
+                   source pyenv/bin/activate
+                   pip install flake8
+                   flake8 app.py
                 """
             }
         }
 
         stage('Test') {
             steps {
-                sh 'pip install -r requirements.txt'
-                sh 'pytest test_app.py'
+                sh script: """#!/bin/bash
+                    source pyenv/bin/activate
+                    pip install -r requirements.txt
+                    pytest test_app.py
+                """
             }
         }
 
