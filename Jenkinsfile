@@ -14,8 +14,12 @@ pipeline {
 
         stage('Lint') {
             steps {
-                sh 'pip install flake8'
-                sh 'flake8 app.py'
+                sh script: """#!/bin/bash
+                python3 -m venv pyenv
+                source pyenv/bin/activate
+                pip install flake8
+                flake8 app.py
+                """
             }
         }
 
