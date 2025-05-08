@@ -1,6 +1,7 @@
 from flask import Flask
-app = Flask(_name)
+app = Flask(__name__)
+
 
 @app.route("/")
-def hello ():
-  return "Hello from Jenkins CI/CD!"
+def hello():
+    return "Hello from Jenkins CI/CD!"
