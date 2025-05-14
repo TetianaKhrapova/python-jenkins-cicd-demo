@@ -10,6 +10,17 @@ pipeline {
             steps {
                 checkout scm
             }
+       }
+
+        stage('Read Version') {
+            steps {
+                script {
+                    VERSION = readFile('VERSION').trim()
+                    env.DOCKER_TAGGED_IMAGE = "${DOCKER_IMAGE}:${VERSION}"
+                    echo "Docker image version tag: ${env.DOCKER_TAGGED_IMAGE}"
+                }
+            }
+
         }
 
         stage('Lint') {
@@ -36,7 +47,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh "ls -lh && pwd; env"
-                sh "docker build -t $DOCKER_IMAGE ."
+                sh "docker build -t ${env.DOCKER_TAGGED_IMAGE} ."
             }
         }
 
@@ -44,15 +55,15 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'dockerhub-token', variable: 'DOCKER_TOKEN')]) {
                     sh 'echo $DOCKER_TOKEN | docker login -u tkhrapova --password-stdin'
-                    sh "docker push $DOCKER_IMAGE"
+                    sh "docker push ${env.DOCKER_TAGGED_IMAGE}"
                 }
             }
         }
 
-        stage('Deploy (optional)') {
-            steps {
-                sh "docker run -d -p 8000:8000 $DOCKER_IMAGE"
-            }
-        }
+        // stage('Deploy (optional)') {
+        //    steps {
+        //        sh "docker run -d -p 8000:8000 $DOCKER_IMAGE"
+        //    }
+        // }
     }
 }
