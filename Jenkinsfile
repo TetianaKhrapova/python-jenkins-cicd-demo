@@ -35,6 +35,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
+                sh "ls -lh && pwd; env"
                 sh "docker build -t $DOCKER_IMAGE ."
             }
         }
