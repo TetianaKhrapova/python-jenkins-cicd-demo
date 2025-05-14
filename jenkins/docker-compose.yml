@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  jenkins-master:
+    image: jenkins/jenkins:2.492.3
+    container_name: jenkins-master
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "50000:50000"  # JNLP port
+    volumes:
+     - $PWD/jenkins_home:/var/jenkins_home
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    networks:
+      - jenkins-net
+
+  jenkins-agent:
+    image: jenkins-custom-agent:1.2
+    container_name: jenkins-agent
+    depends_on:
+      - jenkins-master
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - JENKINS_URL=http://jenkins-master:8080
+      - JENKINS_AGENT_NAME=agent1
+      - JENKINS_SECRET=c267685b8dca574cf9cf1ea8dde557ebe7d04090ca6ee36cc7ec760b58eaae88
+      - JENKINS_AGENT_WORKDIR=/home/jenkins/agent
+    networks:
+      - jenkins-net
+
+volumes:
+  jenkins_home:
+
+networks:
+  jenkins-net:
+
