@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'yourdockerhub/python-demo'
+        DOCKER_IMAGE = 'tkhrapova/python-demo'
     }
 
     stages {
@@ -42,8 +42,8 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                withCredentials([string(credentialsID: 'dockerhub-token', variable: 'DOCKER_TOKEN')]) {
-                    sh 'echo $DOCKER_TOKEN | docker login -u yourdockerhub --password-stdin'
+                withCredentials([string(credentialsId: 'dockerhub-token', variable: 'DOCKER_TOKEN')]) {
+                    sh 'echo $DOCKER_TOKEN | docker login -u tkhrapova --password-stdin'
                     sh "docker push $DOCKER_IMAGE"
                 }
             }
