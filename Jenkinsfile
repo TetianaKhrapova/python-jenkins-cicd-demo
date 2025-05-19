@@ -8,8 +8,12 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                sshagent(['7ec7817a-7c45-412f-9d61-664e064a6621']) {
-                    checkout scm
+                withCredentials([sshUserPrivateKey(credentialsId: '7ec7817a-7c45-412f-9d61-664e064a6621', keyFileVariable: 'SSH_KEY')]) {
+                    sh '''
+                        eval "$(ssh-agent -s)"
+                        ssh-add $SSH_KEY
+                        git checkout HEAD
+                    '''
                 }
             }
         }
@@ -18,7 +22,7 @@ pipeline {
             steps {
                 sh '''
                     python3 -m venv .venv
-                    source .venv/bin/activate
+                    . .venv/bin/activate
                     pip install --upgrade pip
                     pip install flake8 pytest bump2version
                 '''
@@ -28,8 +32,8 @@ pipeline {
         stage('Read Version') {
             steps {
                 script {
-                    VERSION = readFile('VERSION').trim()
-                    env.DOCKER_TAGGED_IMAGE = "${DOCKER_IMAGE}:${VERSION}"
+                    def version = readFile('VERSION').trim()
+                    env.DOCKER_TAGGED_IMAGE = "${DOCKER_IMAGE}:${version}"
                     echo "Docker image version tag: ${env.DOCKER_TAGGED_IMAGE}"
                 }
             }
@@ -38,7 +42,7 @@ pipeline {
         stage('Lint') {
             steps {
                 sh '''
-                    source .venv/bin/activate
+                    . .venv/bin/activate
                     flake8 app.py
                 '''
             }
@@ -47,7 +51,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    source .venv/bin/activate
+                    . .venv/bin/activate
                     pip install -r requirements.txt
                     pytest test_app.py
                 '''
@@ -63,17 +67,21 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 withCredentials([string(credentialsId: 'dockerhub-token', variable: 'DOCKER_TOKEN')]) {
-                    sh 'echo $DOCKER_TOKEN | docker login -u tkhrapova --password-stdin'
-                    sh "docker push ${env.DOCKER_TAGGED_IMAGE}"
+                    sh '''
+                        echo $DOCKER_TOKEN | docker login -u tkhrapova --password-stdin
+                        docker push ${DOCKER_TAGGED_IMAGE}
+                    '''
                 }
             }
         }
 
         stage('Bump Version and Push') {
             steps {
-                sshagent(['7ec7817a-7c45-412f-9d61-664e064a6621']) {
+                withCredentials([sshUserPrivateKey(credentialsId: '7ec7817a-7c45-412f-9d61-664e064a6621', keyFileVariable: 'SSH_KEY')]) {
                     sh '''
-                        source .venv/bin/activate
+                        eval "$(ssh-agent -s)"
+                        ssh-add $SSH_KEY
+                        . .venv/bin/activate
                         git config user.name "jenkins"
                         git config user.email "jenkins@example.com"
                         bump2version patch --allow-dirty
