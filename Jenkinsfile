@@ -8,7 +8,9 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                sshagent(['7ec7817a-7c45-412f-9d61-664e064a6621']) {
+                    checkout scm
+                }
             }
         }
 
@@ -67,22 +69,18 @@ pipeline {
             }
         }
 
-        stage('Bump Version') {
+        stage('Bump Version and Push') {
             steps {
-                sh '''
-                    source .venv/bin/activate
-                    git config user.name "jenkins"
-                    git config user.email "jenkins@example.com"
-                    bump2version patch --allow-dirty
-                    git push origin HEAD:main
-                '''
+                sshagent(['7ec7817a-7c45-412f-9d61-664e064a6621']) {
+                    sh '''
+                        source .venv/bin/activate
+                        git config user.name "jenkins"
+                        git config user.email "jenkins@example.com"
+                        bump2version patch --allow-dirty
+                        git push origin HEAD:main
+                    '''
+                }
             }
         }
-
-        // stage('Deploy (optional)') {
-        //     steps {
-        //         sh "docker run -d -p 8000:8000 ${env.DOCKER_TAGGED_IMAGE}"
-        //     }
-        // }
     }
 }
