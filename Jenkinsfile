@@ -12,12 +12,13 @@ pipeline {
             }
         }
 
-        stage('Setup venv and install dependencies') {
+        stage('Setup venv') {
             steps {
                 sh '''
                     python3 -m venv .venv
-                    . .venv/bin/activate && pip install --upgrade pip
-                    . .venv/bin/activate && pip install -r requirements.txt flake8 pytest bump2version
+                    source .venv/bin/activate
+                    pip install --upgrade pip
+                    pip install flake8 pytest bump2version
                 '''
             }
         }
@@ -34,13 +35,20 @@ pipeline {
 
         stage('Lint') {
             steps {
-                sh '. .venv/bin/activate && flake8 app.py'
+                sh '''
+                    source .venv/bin/activate
+                    flake8 app.py
+                '''
             }
         }
 
         stage('Test') {
             steps {
-                sh '. .venv/bin/activate && pytest test_app.py'
+                sh '''
+                    source .venv/bin/activate
+                    pip install -r requirements.txt
+                    pytest test_app.py
+                '''
             }
         }
 
@@ -62,15 +70,15 @@ pipeline {
         stage('Bump Version') {
             steps {
                 sh '''
-                    . .venv/bin/activate && bump2version patch --allow-dirty
+                    source .venv/bin/activate
                     git config user.name "jenkins"
                     git config user.email "jenkins@example.com"
+                    bump2version patch --allow-dirty
                     git push origin HEAD:main
                 '''
             }
         }
 
-        // За потреби можна розкоментувати стадію деплою
         // stage('Deploy (optional)') {
         //     steps {
         //         sh "docker run -d -p 8000:8000 ${env.DOCKER_TAGGED_IMAGE}"
