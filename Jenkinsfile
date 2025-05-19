@@ -12,14 +12,13 @@ pipeline {
             }
         }
 
-        stage('Setup venv') {
+        stage('Setup venv and install dependencies') {
             steps {
-                sh """
+                sh '''
                     python3 -m venv .venv
-                    source .venv/bin/activate
-                    pip install --upgrade pip
-                    pip install flake8 pytest bump2version
-                """
+                    . .venv/bin/activate && pip install --upgrade pip
+                    . .venv/bin/activate && pip install -r requirements.txt flake8 pytest bump2version
+                '''
             }
         }
 
@@ -35,20 +34,13 @@ pipeline {
 
         stage('Lint') {
             steps {
-                sh """
-                    source .venv/bin/activate
-                    flake8 app.py
-                """
+                sh '. .venv/bin/activate && flake8 app.py'
             }
         }
 
         stage('Test') {
             steps {
-                sh """
-                    source .venv/bin/activate
-                    pip install -r requirements.txt
-                    pytest test_app.py
-                """
+                sh '. .venv/bin/activate && pytest test_app.py'
             }
         }
 
@@ -69,17 +61,16 @@ pipeline {
 
         stage('Bump Version') {
             steps {
-                sh """
-                    source .venv/bin/activate
-                    bump2version patch --allow-dirty
+                sh '''
+                    . .venv/bin/activate && bump2version patch --allow-dirty
                     git config user.name "jenkins"
                     git config user.email "jenkins@example.com"
-                    git commit -am "Bump version [ci skip]"
                     git push origin HEAD:main
-                """
+                '''
             }
         }
 
+        // За потреби можна розкоментувати стадію деплою
         // stage('Deploy (optional)') {
         //     steps {
         //         sh "docker run -d -p 8000:8000 ${env.DOCKER_TAGGED_IMAGE}"
